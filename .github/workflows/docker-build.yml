@@ -13,7 +13,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Cek apakah secrets terbaca (tanpa menampilkan nilainya)
       - name: Check Docker Hub secrets
         run: |
           if [ -z "${{ secrets.DOCKERHUB_USERNAME }}" ]; then echo "ERROR: DOCKERHUB_USERNAME is empty"; exit 1; fi
@@ -29,9 +28,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Build and push (verbose)
         uses: docker/build-push-action@v6
+        env:
+          BUILDKIT_PROGRESS: plain
         with:
           context: .
           push: true
+          pull: true
+          no-cache: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/n8n-pdfplumber:latest
