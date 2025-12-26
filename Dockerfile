@@ -1,23 +1,22 @@
-FROM n8nio/n8n:latest
+FROM node:20-bookworm-slim
 
-USER root
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install python + venv (Debian base) lalu install pdfplumber via venv (bukan pip system)
-RUN set -eux; \
-  apt-get update; \
-  apt-get install -y --no-install-recommends \
+# 1. Install system deps + python
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
     python3 \
-    python3-venv \
     python3-pip \
     ca-certificates \
-  ; \
-  python3 -m venv /opt/venv; \
-  /opt/venv/bin/pip install --no-cache-dir --upgrade pip setuptools wheel; \
-  /opt/venv/bin/pip install --no-cache-dir pdfplumber; \
-  apt-get clean; \
-  rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/*
 
-# Biar "python" & "pip" default ngarah ke venv
-ENV PATH="/opt/venv/bin:$PATH"
+# 2. Install pdfplumber (pakai --break-system-packages agar lolos PEP668)
+RUN pip3 install --no-cache-dir --break-system-packages pdfplumber
 
+# 3. Install n8n
+RUN npm install -g n8n
+
+# 4. Runtime config
 USER node
+EXPOSE 5678
+CMD ["n8n"]
