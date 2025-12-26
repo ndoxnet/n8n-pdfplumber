@@ -1,23 +1,22 @@
-name: Build and Push n8n image (pdfplumber)
+name: docker-build
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch: {}
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Check Docker Hub secrets
         run: |
-          if [ -z "${{ secrets.DOCKERHUB_USERNAME }}" ]; then echo "ERROR: DOCKERHUB_USERNAME is empty"; exit 1; fi
-          if [ -z "${{ secrets.DOCKERHUB_TOKEN }}" ]; then echo "ERROR: DOCKERHUB_TOKEN is empty"; exit 1; fi
-          echo "Secrets OK"
+          test -n "${{ secrets.DOCKERHUB_USERNAME }}" || (echo "Missing DOCKERHUB_USERNAME" && exit 1)
+          test -n "${{ secrets.DOCKERHUB_TOKEN }}" || (echo "Missing DOCKERHUB_TOKEN" && exit 1)
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -28,13 +27,11 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push (verbose)
+      - name: Build and push
         uses: docker/build-push-action@v6
-        env:
-          BUILDKIT_PROGRESS: plain
         with:
           context: .
+          file: ./Dockerfile
           push: true
-          pull: true
-          no-cache: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/n8n-pdfplumber:latest
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/n8n-pdfplumber:latest
